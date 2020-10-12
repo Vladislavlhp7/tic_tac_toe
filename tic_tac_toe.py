@@ -1,11 +1,40 @@
 import numpy as np
 
-class Turn:
-		
-	def __init__(self, id):
-		self.id = id
-		self.value = 0
+class TurnNode:
+	def __init__(self):
 		self.next = [None]*8
+		self.value = 0
+		self.isEnd = False
+
+
+# Turn will implement Trie data structure
+class Turn:
+
+	def __init__(self):
+		self.root = self.getNode()
+
+	def getNode(self):
+		return TurnNode()
+
+	def insert(self, turns):
+		iterator = self.root
+		for turn in turns:
+			if iterator.next[turn] == None:
+				iterator.next[turn] = self.getNode()
+			iterator = iterator.next[turn]
+		iterator.isEnd = True
+
+	def search(self, turns):
+		iterator = self.root
+		for turn in turns:
+			if iterator.next[turn] == None:
+				return False
+			iterator = iterator.next[turn]
+		
+		if iterator != None and iterator.isEnd:
+			return True
+
+		return False
 
 def deleteTurn(turn):
 	if turn is not None:
@@ -13,14 +42,11 @@ def deleteTurn(turn):
 			deleteTurn(turn.next[i])
 			turn.next[i] = None
 
-#def insertTurns(turn):
-    
-
 
 def minimax(turn, depth):
     possibilities = []
     if depth == 0:
-        return turn.id
+        return turn.value
     elif turn % 2 == 1:
         for node in turn.next:
             possibilities.append(minimax(node, depth-1))
@@ -105,7 +131,7 @@ _turn = 0
 game_not_won = True
 
 # The AI
-turn = Turn(0)
+turn = Turn()
 
 print_board(board)
 
