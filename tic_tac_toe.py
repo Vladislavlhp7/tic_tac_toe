@@ -16,8 +16,10 @@ class Turn:
 	def getNode(self):
 		return TurnNode()
 
+	# The value of each combination will be computed as well as the insertion functionality
 	def insert(self, turns):
 		iterator = self.root
+		value, index, turns = evaluate_turn(turns)
 		for turn in turns:
 			if iterator.next[turn] == None:
 				iterator.next[turn] = self.getNode()
@@ -36,12 +38,14 @@ class Turn:
 
 		return False
 
-def deleteTurn(turn):
-	if turn is not None:
-		for i in range(8):
-			deleteTurn(turn.next[i])
-			turn.next[i] = None
-
+def evaluate_turn(turns):
+	value = 0
+	min_num = 5 	# A winner is selected upon at least 5 numbers of turns and max 9
+	for num in range(min_num, 8+1)
+		value = points(list_to_board(turns[:num]+["-"]*(8-num)))
+		if(value != 0):
+			return value, num, turns[:num]
+	return value, num, turns 	# No better move than a one leading to equal
 
 def minimax(turn, depth):
     possibilities = []
@@ -73,7 +77,28 @@ def tile_free(board, num):
 		return True
 	return False
 
-def points(board, player):
+def permutations(arr, start, end):	
+	if(start == end):
+		print(arr)
+		outcomes.append([num] + arr)
+		return
+	for i in range(start, end+1):
+		arr[i], arr[start] = arr[start], arr[i]
+		permutations(arr, start+1, end)
+		arr[i], arr[start] = arr[start], arr[i]
+
+# AI first
+def list_to_board(arr):
+	board = ["-"]*9
+	for index, cell in enumerate(arr):
+		if(index%2):
+			board[cell] = 'x'
+		else:
+			board[cell] = 'o'
+	return board
+
+# AI first
+def points(board):
 	value = 10
 	sum_rows = 0
 	sum_cols = 0
@@ -82,9 +107,9 @@ def points(board, player):
 
 	for i, tile in enumerate(board):
 		temp = []
-		if(tile == 'x'):
+		if(tile == 'o'):
 			matrix[int(i/3)][i%3] = 1
-		elif(tile == 'o'):
+		elif(tile == 'x'):
 			matrix[int(i/3)][i%3] = -1
 	print(matrix)
 
@@ -92,9 +117,9 @@ def points(board, player):
 	for row in matrix:
 		sum_rows = sum(row)
 		if(sum_rows == 3 or sum_rows == -3):
-			if player == 1:
+			if(tile == 'o'):
 				return value
-			else:
+			elif(tile == 'x'):
 				return value*(-1)
 
 	# Check if 3 same tiles are on the same col
@@ -103,31 +128,35 @@ def points(board, player):
 		for i in range(3):
 			sum_cols += matrix[i][j]
 		if(sum_cols == 3 or sum_cols == -3):
-			if player == 1:
+			elif(tile == 'o'):
 				return value
-			else:
+			elif(tile == 'x'):
 				return value*(-1)
 	# Check if 3 same tiles are on the same diagonal
 	sum_diagonal = matrix[0][0]+matrix[1][1]+matrix[2][2]
 	if(sum_diagonal == 3 or sum_diagonal == -3):
-		if player == 1:
+		elif(tile == 'o'):
 			return value
-		else:
+		elif(tile == 'x'):
 			return value*(-1)
 	# Check if 3 same tiles are on the same diagonal
 	sum_diagonal = matrix[2][0]+matrix[1][1]+matrix[0][2]
 	if(sum_diagonal == 3 or sum_diagonal == -3):
-		value = 10
-		if player == 1:
+		elif(tile == 'o'):
 			return value
-		else:
+		elif(tile == 'x'):
 			return value*(-1)
 
-# Some variables
+	# Equal for both players
+	return 0
+
+
 board = ["-"]*9
 num = -1
 str_in = " "
 _turn = 0
+start_ai = True # After first turn update trie with permutations
+outcomes = []	# List to hold all permutations
 game_not_won = True
 
 # The AI
@@ -153,8 +182,15 @@ while(game_not_won):
 			if tile_free(board, num):
 				board[num] = 'x'
 				_turn = 1
+			# If it is first turn only, permute, update trie ds
+			if(start_ai):
+				permutations([x for x in range(0, 8) if x != num], 0, 7)
+				for outcome in outcomes:
+					turn.insert(outcome)
+				start_ai = False
+
 		print_board(board)
-		print(points(board, 1))
+		print(points(board))
 
 	while(_turn == 1):
 		_turn = 0
