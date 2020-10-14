@@ -13,7 +13,6 @@ class TurnNode:
 	def getValue(self):
 		return self.value		
 
-
 # Turn will implement Trie data structure
 class Turn:
 
@@ -30,7 +29,6 @@ class Turn:
 	def insert(self, turns):
 		iterator = self.root
 		value, index, turns = evaluate_turn(turns)
-		print(value, index, turns)
 		for turn in turns:
 			if not iterator.next[turn]:
 				iterator.next[turn] = self.getNode()
@@ -50,8 +48,7 @@ class Turn:
 def evaluate_turn(turns):
 	value = 0
 	min_num = 5 				# A winner is selected upon at least 5 numbers of turns and max 9
-	for num in range(min_num, 8+1):
-		# print_board(list_to_board(turns[:num+1]))
+	for num in range(min_num, 9):
 		value = points(list_to_board(turns[:num+1]))
 		if(value != 0):
 			return value, num, turns[:num+1]
@@ -66,32 +63,28 @@ def minimax_val(node, player):
 		for _node in node.next:
 			if(_node):
 				possibilities.append(minimax_val(_node, 0))
-		# print("PossibilitiesMAX:", possibilities)
 		return max(possibilities)
 	else:
 		for _node in node.next:
 			if(_node):
 				possibilities.append(minimax_val(_node, 1))
-		# print("PossibilitiesMIN:", possibilities)
 		return min(possibilities)
 		
 
 def ai_choose(history, turn):
 	possibilities = []
 	decision = []
-	node = turn.getRoot()
-	# if(len(history) >= 1):
-	for x in range(0,len(history)):
-		print(node.next)
+	node = turn.getRoot() 			# Root is empty
+	for x in range(0,len(history)):	# Move until last history entry is reached
 		if(node):	
 			node = node.next[history[x]]
 	if len(history) % 2 == 1:
 		for x, _node in enumerate((node.next)):
 			if(_node):
 				possibilities.append([minimax_val(_node, 1)] + [x])
-				print("Possibilities:", possibilities)
+				# print("Possibilities:", possibilities)
 	decision = max(possibilities, key=itemgetter(0))
-	print(decision)
+	# print(decision)
 	return decision[1]
 
 
@@ -113,26 +106,24 @@ def tile_free(board, num):
 
 def permutations(arr, start, end, num, outcomes):	
 	if(start == end):
-		# print(arr)
-		outcomes.append([num] + arr)
-		print(outcomes[-1])
+		outcomes.append([num] + arr) 	# num holds the first move
 		return
 	for i in range(start, end+1):
 		arr[i], arr[start] = arr[start], arr[i]
 		permutations(arr, start+1, end, num, outcomes)
 		arr[i], arr[start] = arr[start], arr[i]
 
-# AI first
 def list_to_board(arr):
 	board = ["-"]*9
 	for index, cell in enumerate(arr):
-		if(index%2):
-			board[cell] = 'o'
+		if(index%2): 		# AI first
+			board[cell] = 'o' 
 		else:
 			board[cell] = 'x'
 	return board
 
-# AI first
+# AI points are positive, whereas human player ones are negative
+# This is important for the selection of the optimal move
 def points(board):
 	value = 10
 	sum_rows = 0
@@ -145,7 +136,6 @@ def points(board):
 			matrix[int(i/3)][i%3] = 1
 		elif(tile == 'x'):
 			matrix[int(i/3)][i%3] = -1
-	# print(matrix)
 
 	# Check if 3 same tiles are on the same row
 	for row in matrix:
@@ -185,23 +175,23 @@ def points(board):
 	return 0
 
 
-board = ["-"]*9
-num = -1
-str_in = " "
-_turn = 0
+board = ["-"]*9	# Create board
+num = -1		# num will hold each move we input
+str_in = " "	# Variable for validation
+_turn = 0		# To keep player or ai turn
 start_ai = True # After first turn update trie with permutations
 outcomes = []	# List to hold all permutations
 history = [] 	# To hold all played turns
 game_not_won = True
 
-print_board(board)
-
 # Let it be that the standard player uses 'x'
-# He is also represented with the boolean value of 1
 
 # Start game
 while(game_not_won):
+	print_board(board)
+	# Human player starts first
 	while(_turn == 0):
+		# Validate input
 		try:
 			num = int(input("Choose a tile [from 0 to 8]:"))
 		except ValueError:
@@ -209,34 +199,28 @@ while(game_not_won):
 			while(len(str_in) > 1 or ord(str_in) < 48 or ord(str_in) > 57):
 				str_in = input("Choose a valid tile [from 0 to 8]:")
 			num = int(str_in)
-
+		# Input is valid
 		if num >= 0 and num <= 8:
 			if tile_free(board, num):
-				board[num] = 'x'
-				history.append(num)
-				_turn = 1
-				# If it is first turn only, permute, update trie ds
-				if(start_ai):
+				board[num] = 'x' 		# Update board
+				history.append(num)		# Add move to 'played moves'
+				_turn = 1				# Enable AI move
+				if(start_ai): 			# If it is first turn only, permute, update trie ds
 					# The AI
 					turn = Turn()
+					# Since move one has been played, there are 7 more moves to be permuted
 					permutations([x for x in range(0, 8+1) if x != num], 0, 7, num ,outcomes)
 					for outcome in outcomes:
 						turn.insert(outcome)
-					start_ai = False
-				print(points(board))
+					start_ai = False	# Disable re-intiation of AI knowledge base
 				if(points(board)!=0 or len(history)==9):
 					game_not_won = False
+					_turn = 0 				# Disable AI move
 					break
-
-	print_board(board)
 
 	if(_turn == 1):
 		history.append(ai_choose(history, turn))
 		board[history[len(history)-1]] = 'o'
 		_turn = 0
-		print(points(board))
 		if(points(board)!=0 or len(history)==9):
 			game_not_won = False
-			
-	print_board(board)
-
